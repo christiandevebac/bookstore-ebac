@@ -53,3 +53,52 @@ class ProductSerializerTestCase(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("title", serializer.errors)
         self.assertIn("category", serializer.errors)
+import json
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+class TestProductViewSet(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(title="Romance", slug="romance")
+        self.product = Product.objects.create(title="Dom Casmurro", price=50)
+        self.product.category.add(self.category)
+
+    def test_get_all_product(self):
+        response = self.client.get(reverse("product-list", kwargs={"version": "v1"}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        product_data = json.loads(response.content)
+        self.assertEqual(product_data[0]["title"], self.product.title)
+
+    def test_create_product(self):
+        data = json.dumps({
+            "title": "O Cortico",
+            "price": 45,
+            "category": [{"title": "Literatura", "slug": "literatura"}],
+        })
+        response = self.client.post(
+            reverse("product-list", kwargs={"version": "v1"}),
+            data=data,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+class TestCategoryViewSet(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(title="Ficcao", slug="ficcao")
+
+    def test_get_all_category(self):
+        response = self.client.get(reverse("category-list", kwargs={"version": "v1"}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        category_data = json.loads(response.content)
+        self.assertEqual(category_data[0]["title"], self.category.title)
+
+    def test_create_category(self):
+        data = json.dumps({"title": "Biografia", "slug": "biografia"})
+        response = self.client.post(
+            reverse("category-list", kwargs={"version": "v1"}),
+            data=data,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+

@@ -28,3 +28,24 @@ class OrderSerializerTestCase(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("user", serializer.errors)
         self.assertIn("products_id", serializer.errors)
+import json
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+class TestOrderViewSet(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="usuario_teste", password="123")
+        self.category = Category.objects.create(title="Tecnologia", slug="tecnologia")
+        self.product = Product.objects.create(title="Clean Architecture", price=120)
+        self.product.category.add(self.category)
+
+    def test_create_order(self):
+        data = json.dumps({"products_id": [self.product.id], "user": self.user.id})
+        response = self.client.post(
+            reverse("order-list", kwargs={"version": "v1"}),
+            data=data,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
