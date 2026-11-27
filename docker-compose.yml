@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=bookstore_dev
+      - POSTGRES_PASSWORD=bookstore_dev
+      - POSTGRES_DB=bookstore_dev
+    networks:
+      - bookstore_network
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app/
+    ports:
+      - "8000:8000"
+    environment:
+      - SQL_ENGINE=django.db.backends.postgresql
+      - SQL_DATABASE=bookstore_dev
+      - SQL_USER=bookstore_dev
+      - SQL_PASSWORD=bookstore_dev
+      - SQL_HOST=db
+      - SQL_PORT=5432
+    depends_on:
+      - db
+    networks:
+      - bookstore_network
+
+volumes:
+  postgres_data:
+
+networks:
+  bookstore_network:
+    driver: bridge
